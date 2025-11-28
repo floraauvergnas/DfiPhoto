@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Jeu de l'oie - Défi photo</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: "Poppins", system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: #ffd9e5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .game-wrapper {
+      max-width: 1100px;
+      width: 95%;
+      background: #ffeef5;
+      border-radius: 24px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+      padding: 24px 24px 32px;
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+    }
+
+    /* ---------- Plateau ---------- */
+
+    .board {
+      background: #ffc04d;
+      border-radius: 20px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+    }
+
+    .board-title {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: #e35b3f;
+      font-size: 20px;
+    }
+
+    .board-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .board-row.reverse {
+      flex-direction: row-reverse;
+    }
+
+    .case {
+      flex: 1;
+      aspect-ratio: 1 / 1;
+      background: #ffe9c4;
+      border-radius: 12px;
+      position: relative;
+      border: 2px solid rgba(0,0,0,0.05);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 12px;
+      color: #333;
+      overflow: hidden;
+    }
+
+    .case-number {
+      position: absolute;
+      top: 4px;
+      right: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      opacity: 0.7;
+    }
+
+    /* Couleurs par catégorie */
+    .case-technique  { background: #8fd0ff; }  /* bleu */
+    .case-artistique { background: #ffe37a; }  /* jaune */
+    .case-composition{ background: #9ee6a4; }  /* vert */
+    .case-lumiere    { background: #ffb88a; }  /* orange */
+    .case-narration  { background: #d5d0ff; }  /* violet */
+
+    .case.photo-case {
+      background: #ff7272;
+      color: #fff;
+    }
+
+    .case.photo-case::before {
+      content: "📸";
+      font-size: 20px;
+      position: absolute;
+      bottom: 4px;
+      left: 6px;
+    }
+
+    .case.start {
+      background: #7acb82;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .case.finish {
+      background: #f9bc2c;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    /* ---------- Pion ---------- */
+
+    .pawn {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #2c3e50;
+      border: 3px solid #f6ff7a;
+      box-shadow: 0 0 0 3px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: #f6ff7a;
+      position: relative;
+      z-index: 2;
+      transform: translateY(-2px);
+      transition: transform 0.2s ease;
+    }
+
+    /* ---------- Panneau de droite ---------- */
+
+    .side-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      padding: 8px 0;
+    }
+
+    .title-main {
+      font-size: 26px;
+      font-weight: 700;
+      color: #e35b3f;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: #555;
+    }
+
+    .dice-area {
+      background: #fff;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .dice-display {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      border: 3px solid #e35b3f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      font-weight: 700;
+      background: #fff6f6;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 22px;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: 600;
+      background: #e35b3f;
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.2s ease;
+      box-shadow: 0 6px 14px rgba(227, 91, 63, 0.4);
+    }
+
+    .btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: default;
+      box-shadow: none;
+    }
+
+    .status {
+      font-size: 13px;
+      color: #444;
+      min-height: 18px;
+    }
+
+    .challenge-panel {
+      background: #fff;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .challenge-panel.active {
+      display: flex;
+    }
+
+    .challenge-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .challenge-text {
+      font-size: 14px;
+      color: #555;
+    }
+
+    .small-note {
+      font-size: 12px;
+      color: #777;
+      margin-top: 4px;
+    }
+
+    /* Choix du pion */
+
+    .pawn-select {
+      background: #fff;
+      border-radius: 16px;
+      padding: 12px 16px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .pawn-select-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .pawn-options {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pawn-option {
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      border: 2px solid transparent;
+      background: #ffeef5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+      transition: border 0.15s ease, transform 0.1s ease, background 0.15s ease;
+    }
+
+    .pawn-option.active {
+      border-color: #e35b3f;
+      background: #ffd5cf;
+      transform: translateY(-1px);
+    }
+
+    /* Légende */
+
+    .legend {
+      font-size: 11px;
+      color: #555;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-color {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+    }
+
+    .legend-color.technique  { background: #8fd0ff; }
+    .legend-color.artistique { background: #ffe37a; }
+    .legend-color.composition{ background: #9ee6a4; }
+    .legend-color.lumiere    { background: #ffb88a; }
+    .legend-color.narration  { background: #d5d0ff; }
+    .legend-color.bonus      { background: #ff7272; }
+
+    @media (max-width: 800px) {
+      .game-wrapper {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="game-wrapper">
+    <!-- Plateau -->
+    <div class="board">
+      <div class="board-title">ARRIVÉE</div>
+
+      <!-- Ligne 1 : cases 1 à 8 -->
+      <div class="board-row">
+        <div class="case start case-technique" data-index="1" data-category="technique">
+          <span class="case-number">1</span>DEPART
+        </div>
+        <div class="case case-artistique" data-index="2" data-category="artistique">
+          <span class="case-number">2</span>
+        </div>
+        <div class="case photo-case case-technique" data-index="3" data-category="bonus">
+          <span class="case-number">3</span>
+        </div>
+        <div class="case case-technique" data-index="4" data-category="technique">
+          <span class="case-number">4</span>
+        </div>
+        <div class="case case-composition" data-index="5" data-category="composition">
+          <span class="case-number">5</span>
+        </div>
+        <div class="case case-lumiere" data-index="6" data-category="lumiere">
+          <span class="case-number">6</span>
+        </div>
+        <div class="case case-narration" data-index="7" data-category="narration">
+          <span class="case-number">7</span>
+        </div>
+        <div class="case case-artistique" data-index="8" data-category="artistique">
+          <span class="case-number">8</span>
+        </div>
+      </div>
+
+      <!-- Ligne 2 : cases 9 à 16 -->
+      <div class="board-row reverse">
+        <div class="case case-composition" data-index="9" data-category="composition">
+          <span class="case-number">9</span>
+        </div>
+        <div class="case case-technique" data-index="10" data-category="technique">
+          <span class="case-number">10</span>
+        </div>
+        <div class="case photo-case case-technique" data-index="11" data-category="bonus">
+          <span class="case-number">11</span>
+        </div>
+        <div class="case case-artistique" data-index="12" data-category="artistique">
+          <span class="case-number">12</span>
+        </div>
+        <div class="case case-lumiere" data-index="13" data-category="lumiere">
+          <span class="case-number">13</span>
+        </div>
+        <div class="case case-composition" data-index="14" data-category="composition">
+          <span class="case-number">14</span>
+        </div>
+        <div class="case case-narration" data-index="15" data-category="narration">
+          <span class="case-number">15</span>
+        </div>
+        <div class="case case-artistique" data-index="16" data-category="artistique">
+          <span class="case-number">16</span>
+        </div>
+      </div>
+
+      <!-- Ligne 3 : cases 17 à 24 -->
+      <div class="board-row">
+        <div class="case case-technique" data-index="17" data-category="technique">
+          <span class="case-number">17</span>
+        </div>
+        <div class="case case-artistique" data-index="18" data-category="artistique">
+          <span class="case-number">18</span>
+        </div>
+        <div class="case photo-case case-technique" data-index="19" data-category="bonus">
+          <span class="case-number">19</span>
+        </div>
+        <div class="case case-composition" data-index="20" data-category="composition">
+          <span class="case-number">20</span>
+        </div>
+        <div class="case case-lumiere" data-index="21" data-category="lumiere">
+          <span class="case-number">21</span>
+        </div>
+        <div class="case case-narration" data-index="22" data-category="narration">
+          <span class="case-number">22</span>
+        </div>
+        <div class="case case-technique" data-index="23" data-category="technique">
+          <span class="case-number">23</span>
+        </div>
+        <div class="case case-artistique" data-index="24" data-category="artistique">
+          <span class="case-number">24</span>
+        </div>
+      </div>
+
+      <!-- Ligne 4 : cases 25 à 32 -->
+      <div class="board-row reverse">
+        <div class="case case-composition" data-index="25" data-category="composition">
+          <span class="case-number">25</span>
+        </div>
+        <div class="case case-lumiere" data-index="26" data-category="lumiere">
+          <span class="case-number">26</span>
+        </div>
+        <div class="case photo-case case-technique" data-index="27" data-category="bonus">
+          <span class="case-number">27</span>
+        </div>
+        <div class="case case-artistique" data-index="28" data-category="artistique">
+          <span class="case-number">28</span>
+        </div>
+        <div class="case photo-case case-technique" data-index="29" data-category="bonus">
+          <span class="case-number">29</span>
+        </div>
+        <div class="case case-narration" data-index="30" data-category="narration">
+          <span class="case-number">30</span>
+        </div>
+        <div class="case case-technique" data-index="31" data-category="technique">
+          <span class="case-number">31</span>
+        </div>
+        <div class="case case-technique" data-index="32" data-category="technique">
+          <span class="case-number">32</span>
+        </div>
+      </div>
+
+      <!-- Ligne 5 : cases 33 à 40 -->
+      <div class="board-row">
+        <div class="case case-artistique" data-index="33" data-category="artistique">
+          <span class="case-number">33</span>
+        </div>
+        <div class="case case-composition" data-index="34" data-category="composition">
+          <span class="case-number">34</span>
+        </div>
+        <div class="case case-lumiere" data-index="35" data-category="lumiere">
+          <span class="case-number">35</span>
+        </div>
+        <div class="case case-narration" data-index="36" data-category="narration">
+          <span class="case-number">36</span>
+        </div>
+        <div class="case case-technique" data-index="37" data-category="technique">
+          <span class="case-number">37</span>
+        </div>
+        <div class="case case-artistique" data-index="38" data-category="artistique">
+          <span class="case-number">38</span>
+        </div>
+        <div class="case case-composition" data-index="39" data-category="composition">
+          <span class="case-number">39</span>
+        </div>
+        <div class="case finish photo-case" data-index="40" data-category="bonus">
+          <span class="case-number">40</span>ARRIVÉE
+        </div>
+      </div>
+
+      <!-- pion -->
+      <div id="pawn" class="pawn">🐒</div>
+    </div>
+
+    <!-- Panneau de droite -->
+    <div class="side-panel">
+      <div>
+        <div class="title-main">Défi photo</div>
+        <div class="subtitle">
+          Lance le dé, avance ton pion, et réalise le défi lié à la couleur de la case.
+        </div>
+        <div class="legend">
+          <div class="legend-item">
+            <span class="legend-color technique"></span><span>Technique</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color artistique"></span><span>Artistique</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color composition"></span><span>Composition</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color lumiere"></span><span>Lumière</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color narration"></span><span>Histoire</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color bonus"></span><span>Bonus 📸</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Choix du pion -->
+      <div class="pawn-select">
+        <div class="pawn-select-title">Choisis ton pion</div>
+        <div class="pawn-options">
+          <button class="pawn-option active" data-symbol="🐒">🐒</button>
+          <button class="pawn-option" data-symbol="🐱">🐱</button>
+          <button class="pawn-option" data-symbol="🐶">🐶</button>
+          <button class="pawn-option" data-symbol="🦊">🦊</button>
+          <button class="pawn-option" data-symbol="🐼">🐼</button>
+        </div>
+      </div>
+
+      <!-- Zone dé -->
+      <div class="dice-area">
+        <div>Résultat du dé</div>
+        <div id="dice-display" class="dice-display">-</div>
+        <button id="btn-roll" class="btn">
+          🎲 Lancer le dé
+        </button>
+        <button id="btn-replay" class="btn" style="display:none; margin-top:4px;">
+          🔁 Rejouer
+        </button>
+        <div id="status" class="status">Lance le dé pour commencer.</div>
+      </div>
+
+      <!-- Panneau défi -->
+      <div id="challenge-panel" class="challenge-panel">
+        <div class="challenge-title" id="challenge-title">
+          📸 Défi photo
+        </div>
+        <div id="challenge-text" class="challenge-text"></div>
+        <div class="small-note">
+          Quand tu as terminé, clique sur "OK, défi réalisé" pour continuer la partie.
+        </div>
+        <button id="btn-close-challenge" class="btn" style="align-self:flex-start;">
+          ✅ OK, défi réalisé
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const LAST_CASE = 40;
+
+    let currentCase = 1;
+    let isMoving = false;
+    let gameOver = false;
+    let pendingGameOver = false;
+
+    const pawn = document.getElementById("pawn");
+    const diceDisplay = document.getElementById("dice-display");
+    const btnRoll = document.getElementById("btn-roll");
+    const statusLabel = document.getElementById("status");
+    const challengePanel = document.getElementById("challenge-panel");
+    const challengeTitle = document.getElementById("challenge-title");
+    const challengeText = document.getElementById("challenge-text");
+    const btnCloseChallenge = document.getElementById("btn-close-challenge");
+    const btnReplay = document.getElementById("btn-replay");
+
+    // Choix du pion
+    const pawnOptions = document.querySelectorAll(".pawn-option");
+    pawnOptions.forEach(btn => {
+      btn.addEventListener("click", () => {
+        pawnOptions.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        pawn.textContent = btn.dataset.symbol;
+      });
+    });
+
+    // Dictionnaire des catégories lisibles
+    const categoryLabels = {
+      technique: "technique (réglages)",
+      artistique: "artistique / créativité",
+      composition: "composition / cadrage",
+      lumiere: "lumière / exposition",
+      narration: "histoire / narration",
+      bonus: "bonus avancé"
+    };
+
+    // Pool de défis par catégorie
+    const challengePools = {
+      technique: [
+        "Passe en mode manuel (M) ou semi-auto et fais une photo en ISO 100, f/5.6, 1/125 s. Ajuste les réglages jusqu'à obtenir une exposition correcte.",
+        "Utilise le mode priorité ouverture (A/Av) : photographie la même scène à f/2.8 puis à f/11 et compare la profondeur de champ.",
+        "Fais une photo nette d’un sujet en mouvement avec une vitesse d’au moins 1/500 s.",
+        "Désactive l’autofocus automatique multiple : choisis un seul collimateur AF et fais un portrait où les yeux sont parfaitement nets.",
+        "Fais trois photos de la même scène en -1 IL, 0 et +1 IL de correction d’exposition. Compare le résultat.",
+        "Modifie la balance des blancs (auto, tungstène, nuageux…) et fais la même photo pour observer les différences de couleur."
+      ],
+      artistique: [
+        "Réalise une photo pensée pour être en noir et blanc : joue sur les contrastes entre ombre et lumière.",
+        "Crée une image minimaliste : très peu d’éléments dans le cadre, beaucoup d’espace vide.",
+        "Photographie un reflet (vitre, eau, miroir) de manière créative.",
+        "Fais une photo qui traduit une émotion précise (joie, nostalgie, calme, énergie…).",
+        "Utilise un flou de mouvement volontaire (temps de pose lent) pour exprimer la vitesse.",
+        "Crée une mini-série de 3 photos autour d’une même couleur dominante."
+      ],
+      composition: [
+        "Compose une image en appliquant la règle des tiers : place ton sujet principal sur une ligne ou un point fort.",
+        "Cherche des lignes directrices (route, rails, rambarde, ombres…) qui guident le regard jusqu'à ton sujet.",
+        "Réalise une photo très symétrique avec ton sujet parfaitement centré.",
+        "Crée un cadre dans le cadre (porte, fenêtre, branches…) pour entourer ton sujet.",
+        "Prends la même scène en plongée puis en contre-plongée pour comparer les effets.",
+        "Ajoute un premier plan proche de l’objectif pour donner de la profondeur à l’image."
+      ],
+      lumiere: [
+        "Trouve une lumière latérale (venant du côté) et fais un portrait qui met en valeur les volumes du visage.",
+        "Photographie une scène éclairée uniquement par une seule source (fenêtre, lampe, bougie…).",
+        "Cherche des ombres intéressantes (grille, feuilles, objets) et intègre-les comme sujet principal.",
+        "Place la lumière derrière ton sujet (contre-jour) et expose pour le sujet.",
+        "Fais une photo à l’ombre puis la même au soleil direct. Compare la dureté des ombres.",
+        "Simule une ‘golden hour’ en réchauffant volontairement la balance des blancs."
+      ],
+      narration: [
+        "Photographie un détail qui raconte quelque chose sur le lieu où tu te trouves.",
+        "Crée un diptyque : deux photos qui se répondent (avant/après, cause/conséquence…).",
+        "Raconte une mini-histoire en 3 photos prises dans les 5 prochaines minutes.",
+        "Photographie des mains en train de faire quelque chose (cuisiner, écrire, bricoler…).",
+        "Capture une scène spontanée sans que les gens regardent l’appareil.",
+        "Fais une photo qui représente le ‘moment juste avant de partir’ (sac, chaussures, clés, etc.)."
+      ],
+      bonus: [
+        "Utilise la mise au point manuelle pour une scène difficile (faible lumière, sujet loin ou très proche).",
+        "Crée un fort effet bokeh : sujet bien détaché et arrière-plan très flou.",
+        "Réalise un filé : garde ton sujet en mouvement net et le fond flou en suivant le mouvement.",
+        "Fais un autoportrait technique : trépied ou support, retardateur ou déclencheur à distance.",
+        "Réalise une pose longue (≥ 1 s) en stabilisant l’appareil pour flouter ce qui bouge.",
+        "Réduis le bruit numérique : refais une photo en baissant les ISO et en stabilisant l’appareil, puis compare."
+      ]
+    };
+
+    // Place le pion au bon endroit
+    function placePawn() {
+      const target = document.querySelector(`.case[data-index="${currentCase}"]`);
+      if (!target) return;
+      target.appendChild(pawn);
+    }
+
+    placePawn();
+
+    // Lancer de dé
+    btnRoll.addEventListener("click", () => {
+      if (isMoving || gameOver) return;
+
+      const roll = Math.floor(Math.random() * 6) + 1;
+      diceDisplay.textContent = roll;
+      statusLabel.textContent = `Tu avances de ${roll} case${roll > 1 ? "s" : ""}.`;
+      movePawnStepByStep(roll);
+    });
+
+    // Déplacement case par case
+    function movePawnStepByStep(steps) {
+      isMoving = true;
+      btnRoll.disabled = true;
+
+      let remaining = steps;
+
+      const interval = setInterval(() => {
+        if (remaining <= 0 || currentCase >= LAST_CASE) {
+          clearInterval(interval);
+          isMoving = false;
+          btnRoll.disabled = false;
+          afterMove();
+          return;
+        }
+
+        currentCase++;
+        if (currentCase > LAST_CASE) currentCase = LAST_CASE;
+        placePawn();
+        remaining--;
+      }, 400);
+    }
+
+    function afterMove() {
+      if (currentCase >= LAST_CASE) {
+        currentCase = LAST_CASE;
+        placePawn();
+        showCaseChallenge(true); // défi final
+      } else {
+        showCaseChallenge(false);
+      }
+    }
+
+    // Affichage du défi en fonction de la catégorie de la case
+    function showCaseChallenge(isFinal = false) {
+      const caseEl = document.querySelector(`.case[data-index="${currentCase}"]`);
+      const category = caseEl?.dataset.category || "technique";
+      const pool = challengePools[category] || challengePools.technique;
+      const challenge = pool[Math.floor(Math.random() * pool.length)];
+      const label = categoryLabels[category] || "photo";
+
+      pendingGameOver = isFinal;
+
+      challengeTitle.textContent = isFinal
+        ? "🎉 Défi final"
+        : `📸 Défi ${label}`;
+
+      challengeText.textContent = challenge;
+      challengePanel.classList.add("active");
+      statusLabel.textContent = `Case ${currentCase} – défi ${label}.`;
+      btnRoll.disabled = true;
+    }
+
+    // Fermeture du panneau défi
+    btnCloseChallenge.addEventListener("click", () => {
+      challengePanel.classList.remove("active");
+
+      if (pendingGameOver) {
+        pendingGameOver = false;
+        gameOver = true;
+        statusLabel.textContent =
+          '🎉 Bravo ! Tu as terminé le parcours ! Clique sur "Rejouer" pour recommencer.';
+        btnRoll.disabled = true;
+        btnReplay.style.display = "inline-flex";
+      } else {
+        if (!gameOver) {
+          btnRoll.disabled = false;
+          statusLabel.textContent = `Défi validé ! Tu es sur la case ${currentCase}.`;
+        }
+      }
+    });
+
+    // Rejouer
+    btnReplay.addEventListener("click", () => {
+      currentCase = 1;
+      gameOver = false;
+      pendingGameOver = false;
+      isMoving = false;
+      diceDisplay.textContent = "-";
+      challengePanel.classList.remove("active");
+      btnRoll.disabled = false;
+      btnReplay.style.display = "none";
+      statusLabel.textContent = "Nouvelle partie ! Lance le dé pour commencer.";
+      placePawn();
+    });
+  </script>
+</body>
+</html>
